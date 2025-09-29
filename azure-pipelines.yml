@@ -1,0 +1,40 @@
+trigger:
+- main   
+
+pool:
+  vmImage: 'windows-latest'   
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+# 1. Install .NET SDK
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'   
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+# 2. Restore dependencies
+- script: dotnet restore
+  displayName: 'Restore dependencies'
+
+# 3. Build the project
+- script: dotnet build --configuration $(buildConfiguration) --no-restore
+  displayName: 'Build project'
+
+# 4. Run tests (if you have test projects)
+- script: dotnet test --configuration $(buildConfiguration) 
+  displayName: 'Run tests'
+
+# 5. Publish the app
+- script: dotnet publish -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)
+  displayName: 'Publish project'
+
+# 6. Upload build artifacts (so we can deploy later)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+
