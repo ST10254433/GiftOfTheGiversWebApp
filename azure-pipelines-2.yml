@@ -1,0 +1,44 @@
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+  # Step 1: Checkout your code
+  - task: Checkout@1
+    displayName: 'Checkout source code'
+
+  # Step 2: Setup .NET
+  - task: UseDotNet@2
+    displayName: 'Install .NET SDK'
+    inputs:
+      packageType: 'sdk'
+      version: '8.0.x'
+      installationPath: $(Agent.ToolsDirectory)/dotnet
+
+  # Step 3: Restore dependencies
+  - script: dotnet restore
+    displayName: 'Restore NuGet packages'
+
+  # Step 4: Build the project
+  - script: dotnet build GiftOfTheGivers.csproj --configuration $(buildConfiguration)
+    displayName: 'Build project'
+
+  # Step 5: Run unit tests
+  - script: dotnet test --no-build --configuration $(buildConfiguration) --logger trx
+    displayName: 'Run unit tests'
+
+  # Step 6: Publish artifacts
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish build artifacts'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop'
+      publishLocation: 'Container'
